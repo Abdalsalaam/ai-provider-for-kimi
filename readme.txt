@@ -1,57 +1,80 @@
 === AI Provider for Kimi ===
 Contributors: abdalsalaam
-Tags: ai, kimi, moonshot, connector
-Requires at least: 7.0
+Tags: ai, kimi, moonshot, ai-provider, chatbot
+Requires at least: 6.9
 Tested up to: 7.0
 Stable tag: 1.0.0
 Requires PHP: 7.4
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Kimi AI provider for the PHP AI Client SDK.
+Adds Kimi (Moonshot AI) as a first-class provider for the WordPress AI Client.
 
 == Description ==
 
-This plugin provides Kimi AI (Moonshot AI) integration for the PHP AI Client SDK. It enables WordPress sites to use Kimi models for text generation, chat, and other AI capabilities.
+AI Provider for Kimi registers Kimi (Moonshot AI) with the WordPress AI Client, so any plugin or theme that uses the AI Client can call Kimi models the same way it calls OpenAI, Google, or Anthropic.
 
 **Features:**
 
-* Text generation with Kimi models
-* Chat history support
-* Function calling support
-* Automatic provider registration
-* Secure API key storage with encryption
+* Text generation with Kimi chat models
+* Multi-turn chat history
+* Function calling and tool use
+* Structured output via JSON schema
+* Reasoning model support (kimi-k2 series)
+* Dynamic model discovery from the Kimi API
+* Settings screen for selecting a default Kimi model
 
-Available models are dynamically discovered from the Kimi API, including kimi-k2.6, kimi-k2.5, and moonshot-v1 series.
+Available models — including kimi-k2.6, kimi-k2.5, and the moonshot-v1 series — are fetched live from the Kimi API, so new releases appear without a plugin update.
 
 **Requirements:**
 
 * PHP 7.4 or higher
-* For WordPress 6.9, the [wordpress/php-ai-client](https://github.com/WordPress/php-ai-client) package must be installed
-* For WordPress 7.0 and above, no additional changes are required
-* Kimi API key
+* A Kimi API key from [platform.kimi.ai](https://platform.kimi.ai/)
+* WordPress 7.0+ (AI Client is bundled in core), or WordPress 6.9 with the [WordPress/php-ai-client](https://github.com/WordPress/php-ai-client) package installed
+
+**Privacy & data sharing:**
+
+When this plugin is used, prompts and content you send through the AI Client are transmitted to Moonshot AI's servers for processing. Review the [Kimi Privacy Policy](https://platform.kimi.ai/) before enabling this provider on a production site.
 
 == Installation ==
 
-1. Upload the plugin files to `/wp-content/plugins/ai-provider-for-kimi/`
-2. Activate the plugin through the 'Plugins' menu in WordPress
-3. Configure your Kimi API key via Settings -> Kimi AI
+1. Upload the plugin files to `/wp-content/plugins/ai-provider-for-kimi/`, or install through the WordPress plugin browser.
+2. Activate the plugin through the **Plugins** menu in WordPress.
+3. Add your Kimi API key on the WordPress AI connectors screen (provided by the AI Client in core).
+4. Optionally visit **Settings → Kimi AI** to pick a default model.
 
 == Frequently Asked Questions ==
 
 = How do I get a Kimi API key? =
 
-Visit the [Kimi Platform](https://platform.kimi.ai/) to create an API key.
+Sign up at [platform.kimi.ai](https://platform.kimi.ai/) and create an API key from your account dashboard.
 
-= Does this plugin work without the PHP AI Client? =
+= Does this plugin work without the WordPress AI Client? =
 
-No, this plugin requires the PHP AI Client plugin to be installed and activated. It provides the Kimi-specific implementation that the PHP AI Client uses.
+No. The plugin registers Kimi with the AI Client provider registry, so the AI Client must be available — either bundled in WordPress 7.0+ or installed as a separate package on 6.9.
+
+= Which models are supported? =
+
+Any chat-completion model exposed by the Kimi API, including kimi-k2.6, kimi-k2.5, moonshot-v1-8k, moonshot-v1-32k, and moonshot-v1-128k. The list is refreshed automatically.
+
+= Does it support image generation? =
+
+Not yet. This release covers text generation, chat, tool use, and structured output.
+
+= Where is my API key stored? =
+
+In the WordPress options table on your own site, under the AI Client's connector option (`connectors_ai_kimi_api_key`). It is never transmitted anywhere except to the Kimi API when fulfilling a request.
 
 == Changelog ==
 
 = 1.0.0 =
 
-* Initial release
-* Support for Kimi text generation models
-* Function calling support
-* Secure API key storage
+* Initial release.
+* Kimi text generation models with dynamic model discovery.
+* Function calling and structured (JSON schema) output.
+* Default-model selection under Settings → Kimi AI.
+
+== Upgrade Notice ==
+
+= 1.0.0 =
+First public release.
