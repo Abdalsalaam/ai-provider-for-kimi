@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Halawa\KimiAiProvider\Admin;
 
+use Halawa\KimiAiProvider\Provider\KimiProvider;
+
 /**
  * Class for the Kimi provider admin settings page.
  *
@@ -54,6 +56,7 @@ class Settings {
 
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'update_option_' . self::OPTION_DEFAULT_MODEL, array( $this, 'invalidate_models_cache' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 	}
 
 	/**
@@ -125,12 +128,12 @@ class Settings {
 									id="<?php echo esc_attr( self::OPTION_DEFAULT_MODEL ); ?>"
 									class="regular-text"
 								>
-									<?php foreach ( $models as $model_id => $model_name ) : ?>
+									<?php foreach ( $models as $model_id => $model_data ) : ?>
 										<option
 											value="<?php echo esc_attr( $model_id ); ?>"
 											<?php selected( $default_model, $model_id ); ?>
 										>
-											<?php echo esc_html( $model_name ); ?>
+											<?php echo esc_html( $model_data['id'] ); ?>
 										</option>
 									<?php endforeach; ?>
 								</select>
@@ -143,11 +146,31 @@ class Settings {
 									echo esc_html( $description );
 									?>
 								</p>
+								<div id="kimi-model-details" class="kimi-model-details-card"></div>
+								<?php
+								wp_localize_script(
+									'ai-provider-for-kimi-admin',
+									'kimiModelData',
+									$models
+								);
+								wp_localize_script(
+									'ai-provider-for-kimi-admin',
+									'kimiModelStrings',
+									array(
+										'contextLength' => __( 'Context length:', 'ai-provider-for-kimi' ),
+										'capabilities'  => __( 'Capabilities:', 'ai-provider-for-kimi' ),
+										'pricing'       => __( 'Pricing (per 1M tokens):', 'ai-provider-for-kimi' ),
+										'in'            => __( 'In', 'ai-provider-for-kimi' ),
+										'out'           => __( 'Out', 'ai-provider-for-kimi' ),
+										'cache'         => __( 'Cache', 'ai-provider-for-kimi' ),
+									)
+								);
+								?>
 							<?php endif; ?>
 						</td>
 					</tr>
 				</table>
-				<?php submit_button( __( 'Save Settings', 'ai-provider-for-kimi' ) ); ?>
+				<?php submit_button( __( 'Save settings', 'ai-provider-for-kimi' ) ); ?>
 			</form>
 		</div>
 		<?php
@@ -185,7 +208,39 @@ class Settings {
 	 * @return void
 	 */
 	public function invalidate_models_cache(): void {
-		\Halawa\KimiAiProvider\Provider\KimiProvider::modelMetadataDirectory()->invalidateCaches();
+		KimiProvider::modelMetadataDirectory()->invalidateCaches();
+		delete_transient( self::MODELS_TRANSIENT );
+	}
+
+	/**
+	 * Enqueues admin assets for the settings page.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $hook_suffix The current admin page hook.
+	 * @return void
+	 */
+	public function enqueue_assets( string $hook_suffix ): void {
+		if ( 'settings_page_ai-provider-for-kimi' !== $hook_suffix ) {
+			return;
+		}
+
+		$plugin_url = plugin_dir_url( dirname( __DIR__, 2 ) . '/ai-provider-for-kimi.php' );
+
+		wp_enqueue_style(
+			'ai-provider-for-kimi-admin',
+			$plugin_url . 'assets/css/admin-settings.css',
+			array(),
+			'1.0.0'
+		);
+
+		wp_enqueue_script(
+			'ai-provider-for-kimi-admin',
+			$plugin_url . 'assets/js/admin-settings.js',
+			array(),
+			'1.0.0',
+			true
+		);
 	}
 
 	/**
@@ -194,7 +249,7 @@ class Settings {
 	 * @since 1.0.0
 	 *
 	 * @param string $api_key The API key to use for the request.
-	 * @return array<string, string> Associative array of model IDs to model names.
+	 * @return array<string, array<string, mixed>> Associative array of model IDs to model metadata.
 	 */
 	private static function fetch_models( string $api_key ): array {
 		$cached = get_transient( self::MODELS_TRANSIENT );
@@ -224,7 +279,15 @@ class Settings {
 							continue;
 						}
 						$model_id            = $model['id'];
-						$models[ $model_id ] = $model_id;
+						$models[ $model_id ] = array(
+							'id'                 => $model_id,
+							'context_length'     => isset( $model['context_length'] ) && is_numeric( $model['context_length'] ) ? (int) $model['context_length'] : 0,
+							'supports_image_in'  => ! empty( $model['supports_image_in'] ),
+							'supports_video_in'  => ! empty( $model['supports_video_in'] ),
+							'supports_reasoning' => ! empty( $model['supports_reasoning'] ),
+							'pricing'            => self::get_model_pricing( $model_id ),
+							'description'        => self::get_model_description( $model_id ),
+						);
 					}
 
 					if ( ! empty( $models ) ) {
@@ -235,16 +298,199 @@ class Settings {
 			}
 		}
 
-		// Fallback to the known Kimi model list when the API is unreachable or no key is set.
+		return self::get_fallback_models();
+	}
+
+	/**
+	 * Returns the fallback model list when the API is unreachable.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return array<string, array<string, mixed>> Fallback model metadata.
+	 */
+	private static function get_fallback_models(): array {
 		return array(
-			'kimi-k2.6'                       => 'kimi-k2.6',
-			'kimi-k2.5'                       => 'kimi-k2.5',
-			'moonshot-v1-128k'                => 'moonshot-v1-128k',
-			'moonshot-v1-32k'                 => 'moonshot-v1-32k',
-			'moonshot-v1-8k'                  => 'moonshot-v1-8k',
-			'moonshot-v1-128k-vision-preview' => 'moonshot-v1-128k-vision-preview',
-			'moonshot-v1-32k-vision-preview'  => 'moonshot-v1-32k-vision-preview',
-			'moonshot-v1-8k-vision-preview'   => 'moonshot-v1-8k-vision-preview',
+			'kimi-k2.6'                       => array(
+				'id'                 => 'kimi-k2.6',
+				'context_length'     => 256000,
+				'supports_image_in'  => true,
+				'supports_video_in'  => true,
+				'supports_reasoning' => true,
+				'pricing'            => null,
+				'description'        => __( 'Kimi K2.6: Advanced multimodal reasoning model with extended context.', 'ai-provider-for-kimi' ),
+			),
+			'kimi-k2.5'                       => array(
+				'id'                 => 'kimi-k2.5',
+				'context_length'     => 256000,
+				'supports_image_in'  => true,
+				'supports_video_in'  => true,
+				'supports_reasoning' => true,
+				'pricing'            => array(
+					'input'     => 0.60,
+					'output'    => 3.00,
+					'cache_hit' => 0.10,
+				),
+				'description'        => __( 'Kimi K2.5: 256K context, supports images, video, and reasoning.', 'ai-provider-for-kimi' ),
+			),
+			'moonshot-v1-128k'                => array(
+				'id'                 => 'moonshot-v1-128k',
+				'context_length'     => 128000,
+				'supports_image_in'  => false,
+				'supports_video_in'  => false,
+				'supports_reasoning' => false,
+				'pricing'            => array(
+					'input'     => 2.00,
+					'output'    => 5.00,
+					'cache_hit' => null,
+				),
+				'description'        => __( 'Moonshot V1 128K: General-purpose model with 128K context.', 'ai-provider-for-kimi' ),
+			),
+			'moonshot-v1-32k'                 => array(
+				'id'                 => 'moonshot-v1-32k',
+				'context_length'     => 32000,
+				'supports_image_in'  => false,
+				'supports_video_in'  => false,
+				'supports_reasoning' => false,
+				'pricing'            => array(
+					'input'     => 1.00,
+					'output'    => 3.00,
+					'cache_hit' => null,
+				),
+				'description'        => __( 'Moonshot V1 32K: General-purpose model with 32K context.', 'ai-provider-for-kimi' ),
+			),
+			'moonshot-v1-8k'                  => array(
+				'id'                 => 'moonshot-v1-8k',
+				'context_length'     => 8000,
+				'supports_image_in'  => false,
+				'supports_video_in'  => false,
+				'supports_reasoning' => false,
+				'pricing'            => array(
+					'input'     => 0.20,
+					'output'    => 2.00,
+					'cache_hit' => null,
+				),
+				'description'        => __( 'Moonshot V1 8K: General-purpose model with 8K context.', 'ai-provider-for-kimi' ),
+			),
+			'moonshot-v1-128k-vision-preview' => array(
+				'id'                 => 'moonshot-v1-128k-vision-preview',
+				'context_length'     => 128000,
+				'supports_image_in'  => true,
+				'supports_video_in'  => false,
+				'supports_reasoning' => false,
+				'pricing'            => array(
+					'input'     => 2.00,
+					'output'    => 5.00,
+					'cache_hit' => null,
+				),
+				'description'        => __( 'Moonshot V1 128K Vision: Vision-enabled variant with 128K context.', 'ai-provider-for-kimi' ),
+			),
+			'moonshot-v1-32k-vision-preview'  => array(
+				'id'                 => 'moonshot-v1-32k-vision-preview',
+				'context_length'     => 32000,
+				'supports_image_in'  => true,
+				'supports_video_in'  => false,
+				'supports_reasoning' => false,
+				'pricing'            => array(
+					'input'     => 1.00,
+					'output'    => 3.00,
+					'cache_hit' => null,
+				),
+				'description'        => __( 'Moonshot V1 32K Vision: Vision-enabled variant with 32K context.', 'ai-provider-for-kimi' ),
+			),
+			'moonshot-v1-8k-vision-preview'   => array(
+				'id'                 => 'moonshot-v1-8k-vision-preview',
+				'context_length'     => 8000,
+				'supports_image_in'  => true,
+				'supports_video_in'  => false,
+				'supports_reasoning' => false,
+				'pricing'            => array(
+					'input'     => 0.20,
+					'output'    => 2.00,
+					'cache_hit' => null,
+				),
+				'description'        => __( 'Moonshot V1 8K Vision: Vision-enabled variant with 8K context.', 'ai-provider-for-kimi' ),
+			),
 		);
+	}
+
+	/**
+	 * Gets pricing metadata for a model.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $model_id The model identifier.
+	 * @return array<string, float|null>|null Pricing data or null if unknown.
+	 */
+	private static function get_model_pricing( string $model_id ): ?array {
+		$base_id = str_replace( '-vision-preview', '', $model_id );
+
+		$map = array(
+			'kimi-k2.5'        => array(
+				'input'     => 0.60,
+				'output'    => 3.00,
+				'cache_hit' => 0.10,
+			),
+			'moonshot-v1-8k'   => array(
+				'input'     => 0.20,
+				'output'    => 2.00,
+				'cache_hit' => null,
+			),
+			'moonshot-v1-32k'  => array(
+				'input'     => 1.00,
+				'output'    => 3.00,
+				'cache_hit' => null,
+			),
+			'moonshot-v1-128k' => array(
+				'input'     => 2.00,
+				'output'    => 5.00,
+				'cache_hit' => null,
+			),
+		);
+
+		return $map[ $base_id ] ?? null;
+	}
+
+	/**
+	 * Generates a human-readable description for a model.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $model_id The model identifier.
+	 * @return string The model description.
+	 */
+	private static function get_model_description( string $model_id ): string {
+		if ( str_starts_with( $model_id, 'kimi-k2.6' ) ) {
+			return __( 'Kimi K2.6: Advanced multimodal reasoning model with extended context.', 'ai-provider-for-kimi' );
+		}
+
+		if ( str_starts_with( $model_id, 'kimi-k2.5' ) ) {
+			return __( 'Kimi K2.5: 256K context, supports images, video, and reasoning.', 'ai-provider-for-kimi' );
+		}
+
+		if ( str_starts_with( $model_id, 'moonshot-v1-128k-vision' ) ) {
+			return __( 'Moonshot V1 128K Vision: Vision-enabled variant with 128K context.', 'ai-provider-for-kimi' );
+		}
+
+		if ( str_starts_with( $model_id, 'moonshot-v1-128k' ) ) {
+			return __( 'Moonshot V1 128K: General-purpose model with 128K context.', 'ai-provider-for-kimi' );
+		}
+
+		if ( str_starts_with( $model_id, 'moonshot-v1-32k-vision' ) ) {
+			return __( 'Moonshot V1 32K Vision: Vision-enabled variant with 32K context.', 'ai-provider-for-kimi' );
+		}
+
+		if ( str_starts_with( $model_id, 'moonshot-v1-32k' ) ) {
+			return __( 'Moonshot V1 32K: General-purpose model with 32K context.', 'ai-provider-for-kimi' );
+		}
+
+		if ( str_starts_with( $model_id, 'moonshot-v1-8k-vision' ) ) {
+			return __( 'Moonshot V1 8K Vision: Vision-enabled variant with 8K context.', 'ai-provider-for-kimi' );
+		}
+
+		if ( str_starts_with( $model_id, 'moonshot-v1-8k' ) ) {
+			return __( 'Moonshot V1 8K: General-purpose model with 8K context.', 'ai-provider-for-kimi' );
+		}
+
+		return __( 'Moonshot AI model.', 'ai-provider-for-kimi' );
 	}
 }
