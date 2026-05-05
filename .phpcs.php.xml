@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<ruleset name="AI Provider for Kimi — PHP">
+	<description>AI Provider for Kimi generic PHP coding standards.</description>
+
+	<rule ref="./.phpcs.common.xml"/>
+
+	<!-- Rules -->
+	<rule ref="WooCommerce-Core"/>
+	<rule ref="WordPress-Core"/>
+	<rule ref="WordPress-Extra"/>
+	<rule ref="WordPress-Docs"/>
+
+	<rule ref="PHPCompatibility"/>
+
+	<!--
+		PSR-4 autoloaded class files use PascalCase filenames and class doc blocks,
+		not the traditional WordPress file-naming or separate file-doc conventions.
+	-->
+	<rule ref="WordPress.Files.FileName">
+		<exclude-pattern>src/</exclude-pattern>
+	</rule>
+</ruleset>

@@ -1,0 +1,3 @@
+# local PHPStan configuration for AI Provider for Kimi
+includes:
+    - ./dist/phpstan.neon
