@@ -34,7 +34,7 @@ Available models — including kimi-k2.6, kimi-k2.5, and the moonshot-v1 series 
 
 **Privacy & data sharing:**
 
-When this plugin is used, prompts and content you send through the AI Client are transmitted to Moonshot AI's servers for processing. Review the [Kimi Privacy Policy](https://platform.kimi.ai/) before enabling this provider on a production site.
+When this plugin is used, prompts and content you send through the AI Client are transmitted to Moonshot AI's servers for processing. Review the [Kimi OpenPlatform Privacy Policy](https://platform.moonshot.ai/docs/agreement/userprivacy) before enabling this provider on a production site. See the **External services** section below for full details on what data is sent and when.
 
 == Installation ==
 
@@ -64,6 +64,22 @@ Not yet. This release covers text generation, chat, tool use, and structured out
 = Where is my API key stored? =
 
 In the WordPress options table on your own site, under the AI Client's connector option (`connectors_ai_kimi_api_key`). It is never transmitted anywhere except to the Kimi API when fulfilling a request.
+
+== External services ==
+
+This plugin connects to the Kimi (Moonshot AI) API, an external service provided by Moonshot AI Ltd. It is required so the WordPress AI Client can route requests to Kimi models from your site.
+
+The plugin contacts the following endpoints at `https://api.moonshot.ai/v1`:
+
+* `GET /v1/models` — called from the **Settings → Kimi AI** screen and when the AI Client refreshes its model list. No user content is sent; only your configured Kimi API key is transmitted in the `Authorization` header so Moonshot can return the list of models available to your account.
+* `POST /v1/chat/completions` — called whenever any plugin or theme on your site uses the WordPress AI Client to generate text with a Kimi model. The request includes your Kimi API key and the prompt/messages, system instructions, tool definitions, and any other parameters supplied by the calling code (for example, conversation history, JSON schema for structured output, or files attached to the prompt). No data is sent to Moonshot until such a request is made.
+
+Your Kimi API key is stored in your site's WordPress options table and is only transmitted to `api.moonshot.ai` to authenticate the requests above.
+
+This service is provided by Moonshot AI:
+
+* Terms of Service: [https://platform.moonshot.ai/docs/agreement/modeluse](https://platform.moonshot.ai/docs/agreement/modeluse)
+* Privacy Policy: [https://platform.moonshot.ai/docs/agreement/userprivacy](https://platform.moonshot.ai/docs/agreement/userprivacy)
 
 == Changelog ==
 

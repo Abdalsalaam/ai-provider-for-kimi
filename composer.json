@@ -68,7 +68,6 @@
             "README.md",
             "package.json",
             "package-lock.json",
-            "composer.json",
             "composer.lock",
             "phpunit.xml.dist",
             "ai-provider-for-kimi.zip",
