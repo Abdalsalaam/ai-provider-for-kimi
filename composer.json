@@ -72,7 +72,8 @@
             "phpunit.xml.dist",
             "ai-provider-for-kimi.zip",
             ".*",
-            "pnpm-lock.yaml"
+            "pnpm-lock.yaml",
+            ".wordpress.org"
         ]
     },
     "scripts": {

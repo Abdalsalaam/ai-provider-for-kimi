@@ -81,6 +81,10 @@ This service is provided by Moonshot AI:
 * Terms of Service: [https://platform.moonshot.ai/docs/agreement/modeluse](https://platform.moonshot.ai/docs/agreement/modeluse)
 * Privacy Policy: [https://platform.moonshot.ai/docs/agreement/userprivacy](https://platform.moonshot.ai/docs/agreement/userprivacy)
 
+== Screenshots ==
+
+1. WordPress dashboard - Connectors screen.
+
 == Changelog ==
 
 = 1.0.0 =
