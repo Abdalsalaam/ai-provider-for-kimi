@@ -2,7 +2,7 @@
     "name": "abdalsalaam/ai-provider-for-kimi",
     "description": "AI Provider for Kimi for the PHP AI Client SDK.",
     "license": "GPL-2.0-or-later",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "keywords": [
         "ai",
         "kimi",

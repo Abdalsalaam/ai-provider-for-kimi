@@ -2,8 +2,8 @@
 Contributors: abdalsalaam
 Tags: ai, kimi, moonshot, ai-provider, chatbot
 Requires at least: 6.9
-Tested up to: 7.0
-Stable tag: 1.0.0
+Tested up to: 7.1
+Stable tag: 1.0.1
 Requires PHP: 7.4
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -87,6 +87,10 @@ This service is provided by Moonshot AI:
 
 == Changelog ==
 
+= 1.0.1 =
+
+* WordPress 7.1 compatibility.
+
 = 1.0.0 =
 
 * Initial release.
@@ -95,6 +99,9 @@ This service is provided by Moonshot AI:
 * Default-model selection under Settings → Kimi AI.
 
 == Upgrade Notice ==
+
+= 1.0.1 =
+Declares compatibility with WordPress 7.1.
 
 = 1.0.0 =
 First public release.

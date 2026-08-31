@@ -5,7 +5,7 @@
  * Description: AI Provider for Kimi for the WordPress AI Client.
  * Requires at least: 6.9
  * Requires PHP: 7.4
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: Abdalsalaam Halawa
  * Author URI: https://halawa.io
  * License: GPL-2.0-or-later
